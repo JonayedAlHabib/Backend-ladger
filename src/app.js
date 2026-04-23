@@ -1,6 +1,6 @@
 const express = require('express')
 const cookieParser = require("cookie-parser")
-
+const errorHandler = require("./middleware/errorHandler")
 
 const app = express()
 
@@ -21,5 +21,7 @@ app.use("/api/auth", authRouter)
 app.use("/api/accounts", accountRouter)
 app.use("/api/transactions", transactionRoutes)
 
+// Centralized error handler
+app.use(errorHandler)
 
 module.exports = app

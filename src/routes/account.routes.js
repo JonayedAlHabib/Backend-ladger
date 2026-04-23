@@ -1,29 +1,44 @@
-const express = require("express")
-const authMiddleware = require("../middleware/auth.middleware")
-const accountController = require("../controllers/account.controller")
+const express = require("express");
+const authMiddleware = require("../middleware/auth.middleware");
+const accountController = require("../controllers/account.controller");
+const validate = require("../middleware/validate");
+const {
+  createAccountSchema,
+  updateAccountSchema,
+  getAccountBalanceSchema,
+} = require("../schemas/account.schemas");
 
-
-
-const router = express.Router()
+const router = express.Router();
 
 /**
  * - POST /api/accounts/
  * - create an account
  * - protected route
  */
-router.post("/", authMiddleware.authMiddleware, accountController.createAccountController)
-
+router.post(
+  "/",
+  validate(createAccountSchema),
+  accountController.createAccountController,
+);
 
 /**
  * - GET /api/accounts/
  * - Get all accounts of the logged-in user
  * - Protected Route
  */
-router.get("/", authMiddleware.authMiddleware, accountController.getUserAccountsController)
+router.get(
+  "/",
+  validate(getAccountBalanceSchema),
+  accountController.getUserAccountsController,
+);
 
 /**
  * - GET /api/accounts/balance/:accountId
  */
-router.get("/balance/:accountId", authMiddleware.authMiddleware, accountController.getAccountBalanceController)
+router.get(
+  "/balance/:accountId",
+  validate(updateAccountSchema),
+  accountController.getAccountBalanceController,
+);
 
-module.exports = router
+module.exports = router;
