@@ -1,43 +1,50 @@
 const mongoose = require("mongoose")
 
-
 const transactionSchema = new mongoose.Schema({
     fromAccount: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "account",
-        required: [ true, "Transaction must be associated with a from account" ],
+        required: [true, "fromAccount is required"],
         index: true
     },
     toAccount: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "account",
-        required: [ true, "Transaction must be associated with a to account" ],
+        required: [true, "toAccount is required"],
         index: true
     },
     status: {
         type: String,
         enum: {
-            values: [ "PENDING", "COMPLETED", "FAILED", "REVERSED" ],
-            message: "Status can be either PENDING, COMPLETED, FAILED or REVERSED",
+            values: ["PENDING", "COMPLETED", "FAILED", "REVERSED"],
+            message: "Invalid status"
         },
-        default: "PENDING"
+        default: "PENDING",
+        index: true
     },
     amount: {
         type: Number,
-        required: [ true, "Amount is required for creating a transaction" ],
-        min: [ 0, "Transaction amount cannot be negative" ]
+        required: [true, "Amount is required"],
+        min: [0, "Amount cannot be negative"]
+    },
+    description: {
+        type: String,
+        maxlength: 500,
+        trim: true
     },
     idempotencyKey: {
         type: String,
-        required: [ true, "Idempotency Key is required for creating a transaction" ],
-        index: true,
-        unique: true
+        required: [true, "Idempotency key required"],
+        unique: true,
+        index: true
     }
 }, {
     timestamps: true
 })
 
+transactionSchema.index({ fromAccount: 1, createdAt: -1 })
+transactionSchema.index({ toAccount: 1, createdAt: -1 })
+
 const transactionModel = mongoose.model("transaction", transactionSchema)
 
-
-module.exports = transactionModel   
+module.exports = transactionModel

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-
+const ledgerModel = require("./ledger.model")
 
 const accountSchema = new mongoose.Schema({
     user: {
@@ -21,35 +21,26 @@ const accountSchema = new mongoose.Schema({
         required: [true, "Currency is required for creating an account"],
         default: "BDT"
     }
-},{
+}, {
     timestamps: true
 })
 
-accountSchema.index({ user:1, status:1 })
+accountSchema.index({ user: 1, status: 1 })
 
-accountSchema.methods.getBalance = async function () {
-
-    const balanceData = await ledgerModel.aggregate([
+accountSchema.methods.getBalance = async function (session = null) {
+    const query = ledgerModel.aggregate([
         { $match: { account: this._id } },
         {
             $group: {
                 _id: null,
                 totalDebit: {
                     $sum: {
-                        $cond: [
-                            { $eq: [ "$type", "DEBIT" ] },
-                            "$amount",
-                            0
-                        ]
+                        $cond: [{ $eq: ["$type", "DEBIT"] }, "$amount", 0]
                     }
                 },
                 totalCredit: {
                     $sum: {
-                        $cond: [
-                            { $eq: [ "$type", "CREDIT" ] },
-                            "$amount",
-                            0
-                        ]
+                        $cond: [{ $eq: ["$type", "CREDIT"] }, "$amount", 0]
                     }
                 }
             }
@@ -57,20 +48,18 @@ accountSchema.methods.getBalance = async function () {
         {
             $project: {
                 _id: 0,
-                balance: { $subtract: [ "$totalCredit", "$totalDebit" ] }
+                balance: { $subtract: ["$totalCredit", "$totalDebit"] }
             }
         }
     ])
 
-    if (balanceData.length === 0) {
-        return 0
-    }
+    if (session) query.session(session)
 
-    return balanceData[ 0 ].balance
+    const balanceData = await query
 
+    if (balanceData.length === 0) return 0
+    return balanceData[0].balance
 }
 
-
 const accountModel = mongoose.model("account", accountSchema)
-
-module.exports = accountModel;
+module.exports = accountModel

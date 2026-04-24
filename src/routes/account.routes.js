@@ -1,44 +1,43 @@
 const express = require("express");
-const authMiddleware = require("../middleware/auth.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
 const accountController = require("../controllers/account.controller");
 const validate = require("../middleware/validate");
 const {
-  createAccountSchema,
-  updateAccountSchema,
-  getAccountBalanceSchema,
+    createAccountSchema,
+    getAccountBalanceSchema,
 } = require("../schemas/account.schemas");
 
 const router = express.Router();
 
+// All account routes require auth
+router.use(authMiddleware);
+
 /**
- * - POST /api/accounts/
- * - create an account
- * - protected route
+ * POST /api/accounts/
+ * Create an account for the logged-in user
  */
 router.post(
-  "/",
-  validate(createAccountSchema),
-  accountController.createAccountController,
+    "/",
+    validate(createAccountSchema),
+    accountController.createAccountController
 );
 
 /**
- * - GET /api/accounts/
- * - Get all accounts of the logged-in user
- * - Protected Route
+ * GET /api/accounts/
+ * Get all accounts of the logged-in user
  */
 router.get(
-  "/",
-  validate(getAccountBalanceSchema),
-  accountController.getUserAccountsController,
+    "/",
+    accountController.getUserAccountsController
 );
 
 /**
- * - GET /api/accounts/balance/:accountId
+ * GET /api/accounts/balance/:accountId
  */
 router.get(
-  "/balance/:accountId",
-  validate(updateAccountSchema),
-  accountController.getAccountBalanceController,
+    "/balance/:accountId",
+    validate(getAccountBalanceSchema),
+    accountController.getAccountBalanceController
 );
 
 module.exports = router;
