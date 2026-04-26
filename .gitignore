@@ -35,6 +35,11 @@ temp/
 tmp/
 *.tmp
 
+# Testing files (Postman, temporary guides)
+POSTMAN_TESTING.md
+*.postman_collection.json
+*.postman_environment.json
+
 # Package lock (optional, but good to exclude)
 # package-lock.json
 # yarn.lock
