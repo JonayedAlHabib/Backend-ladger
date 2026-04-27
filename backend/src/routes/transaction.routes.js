@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const authMiddleware = require("../middleware/auth.middleware");
+const { authMiddleware, authSystemUserMiddleware } = require("../middleware/auth.middleware");
 const transactionController = require("../controllers/transaction.controller");
 const validate = require("../middleware/validate");
 const {
@@ -17,7 +17,7 @@ const transactionRoutes = Router();
  */
 transactionRoutes.post(
   "/",
-  authMiddleware.authMiddleware,
+  authMiddleware,
   validate(createTransactionSchema),
   transactionController.createTransaction,
 );
@@ -28,7 +28,7 @@ transactionRoutes.post(
  */
 transactionRoutes.post(
   "/system/initial-funds",
-  authMiddleware.authSystemUserMiddleware,
+  authSystemUserMiddleware,
   transactionController.createInitialFundsTransaction,
 );
 
@@ -39,7 +39,7 @@ transactionRoutes.post(
  */
 transactionRoutes.post(
   "/:transactionId/accept",
-  authMiddleware.authSystemUserMiddleware,
+  authSystemUserMiddleware,
   transactionController.acceptPendingTransaction,
 );
 
@@ -50,7 +50,7 @@ transactionRoutes.post(
  */
 transactionRoutes.get(
   "/",
-  authMiddleware.authSystemUserMiddleware,
+  authSystemUserMiddleware,
   transactionController.getAllTransactions,
 );
 
@@ -61,7 +61,7 @@ transactionRoutes.get(
  */
 transactionRoutes.get(
   "/:transactionId",
-  authMiddleware.authMiddleware,
+  authMiddleware,
   transactionController.getTransactionById,
 );
 
