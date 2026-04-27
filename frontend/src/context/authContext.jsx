@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
     try {
       await api.post("/auth/logout");
     } catch {
-      
+      // best effort
     }
     persist(null);
   };
