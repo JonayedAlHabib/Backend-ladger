@@ -317,6 +317,49 @@ async function getAllTransactions(req, res) {
 }
 
 /**
+ * GET /api/transactions/my
+ * Get all transactions for the authenticated user (sent or received)
+ */
+async function getUserTransactions(req, res) {
+    try {
+        // Get all accounts belonging to the user
+        const userAccounts = await accountModel.find({ user: req.user._id })
+        const accountIds = userAccounts.map(acc => acc._id)
+
+        if (accountIds.length === 0) {
+            return res.status(200).json({
+                success: true,
+                transactions: []
+            })
+        }
+
+        // Find transactions where user is sender OR receiver
+        const transactions = await transactionModel
+            .find({
+                $or: [
+                    { fromAccount: { $in: accountIds } },
+                    { toAccount: { $in: accountIds } }
+                ]
+            })
+            .populate("fromAccount toAccount")
+            .sort({ createdAt: -1 })
+            .limit(100) // Limit to 100 most recent
+
+        return res.status(200).json({
+            success: true,
+            count: transactions.length,
+            transactions
+        })
+    } catch (error) {
+        console.error("Get user transactions error:", error)
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch transactions"
+        })
+    }
+}
+
+/**
  * GET /api/transactions/:transactionId
  * Get single transaction by ID
  */
@@ -353,5 +396,6 @@ module.exports = {
     createInitialFundsTransaction,
     acceptPendingTransaction,
     getAllTransactions,
+    getUserTransactions,
     getTransactionById
 }

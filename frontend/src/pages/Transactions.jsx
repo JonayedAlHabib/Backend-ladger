@@ -1,29 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api, { getErrorMessage } from "../lib/api";
 import Navbar from "../components/Navbar";
 
 export default function Transactions() {
-  const [txnId, setTxnId] = useState("");
-  const [result, setResult] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [selectedTxn, setSelectedTxn] = useState(null);
 
-  const handleLookup = async (e) => {
-    e.preventDefault();
-    if (!/^[0-9a-fA-F]{24}$/.test(txnId.trim())) {
-      return setError("Transaction ID must be 24 hex characters");
-    }
-    setError("");
-    setResult(null);
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/transactions/${txnId.trim()}`);
-      setResult(data.transaction);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const { data } = await api.get("/transactions/my");
+        setTransactions(data.transactions || []);
+      } catch (err) {
+        setError(getErrorMessage(err));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const formatDate = (isoDate) => {
+    const d = new Date(isoDate);
+    const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString();
   };
 
   const statusBadge = (status) => {
@@ -48,37 +54,9 @@ export default function Transactions() {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold text-slate-900 mb-1">Transaction History</h1>
-        <p className="text-sm text-slate-500 mb-6">Look up a specific transaction by ID</p>
-
-        <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 mb-6 text-sm text-amber-800">
-          <p className="font-medium">⚠ Limited view</p>
-          <p className="text-xs mt-1">
-            Backend currently provides single transaction lookup only. For full history
-            listing, a <code className="bg-amber-100 px-1 rounded">GET /api/transactions/my</code>{" "}
-            endpoint needs to be added.
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm mb-6">
-          <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              value={txnId}
-              onChange={(e) => setTxnId(e.target.value)}
-              placeholder="Transaction ID (24 hex chars)"
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-emerald-400"
-            >
-              {loading ? "Loading..." : "Look Up"}
-            </button>
-          </form>
-        </div>
+        <p className="text-sm text-slate-500 mb-6">Your recent transactions</p>
 
         {error && (
           <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 mb-4">
@@ -86,46 +64,74 @@ export default function Transactions() {
           </div>
         )}
 
-        {result && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Amount</p>
-                <p className="text-3xl font-bold text-slate-900">
-                  {Number(result.amount).toLocaleString()}
-                </p>
-              </div>
-              {statusBadge(result.status)}
-            </div>
+        {loading && (
+          <div className="rounded-md bg-slate-100 px-4 py-8 text-center">
+            <p className="text-slate-600">Loading transactions...</p>
+          </div>
+        )}
 
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t border-slate-200 pt-4">
-              <div>
-                <dt className="text-xs text-slate-500 mb-0.5">Transaction ID</dt>
-                <dd className="font-mono text-xs text-slate-700 break-all">{result._id}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500 mb-0.5">Date</dt>
-                <dd className="text-slate-700">{new Date(result.createdAt).toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500 mb-0.5">From Account</dt>
-                <dd className="font-mono text-xs text-slate-700 break-all">
-                  {result.fromAccount?._id || result.fromAccount}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500 mb-0.5">To Account</dt>
-                <dd className="font-mono text-xs text-slate-700 break-all">
-                  {result.toAccount?._id || result.toAccount}
-                </dd>
-              </div>
-              {result.description && (
-                <div className="sm:col-span-2">
-                  <dt className="text-xs text-slate-500 mb-0.5">Description</dt>
-                  <dd className="text-slate-700">{result.description}</dd>
+        {!loading && transactions.length === 0 && (
+          <div className="rounded-md bg-slate-50 border border-slate-200 px-4 py-8 text-center">
+            <p className="text-slate-600">No transactions yet</p>
+            <p className="text-xs text-slate-500 mt-1">Send or receive money to see transactions here</p>
+          </div>
+        )}
+
+        {!loading && transactions.length > 0 && (
+          <div className="space-y-3">
+            {transactions.map((txn) => (
+              <button
+                key={txn._id}
+                onClick={() => setSelectedTxn(selectedTxn?._id === txn._id ? null : txn)}
+                className="w-full text-left rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">
+                      {txn.amount} {txn.fromAccount?.currency || "BDT"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {txn.description || "Transfer"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {statusBadge(txn.status)}
+                    <span className="text-xs text-slate-500">{formatDate(txn.createdAt)}</span>
+                  </div>
                 </div>
-              )}
-            </dl>
+
+                {selectedTxn?._id === txn._id && (
+                  <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <p className="text-slate-500 mb-0.5">Transaction ID</p>
+                      <p className="font-mono text-slate-700 break-all">{txn._id}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-0.5">Date</p>
+                      <p className="text-slate-700">{new Date(txn.createdAt).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-0.5">From Account</p>
+                      <p className="font-mono text-slate-700 break-all">
+                        {txn.fromAccount?._id || txn.fromAccount}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-0.5">To Account</p>
+                      <p className="font-mono text-slate-700 break-all">
+                        {txn.toAccount?._id || txn.toAccount}
+                      </p>
+                    </div>
+                    {txn.description && (
+                      <div className="sm:col-span-2">
+                        <p className="text-slate-500 mb-0.5">Description</p>
+                        <p className="text-slate-700">{txn.description}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         )}
       </main>

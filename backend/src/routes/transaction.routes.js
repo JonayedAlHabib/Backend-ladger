@@ -55,6 +55,17 @@ transactionRoutes.get(
 );
 
 /**
+ * - GET /api/transactions/my
+ * - Get authenticated user's transactions (sent or received)
+ * - Protected: requires authenticated user
+ */
+transactionRoutes.get(
+  "/my",
+  authMiddleware,
+  transactionController.getUserTransactions,
+);
+
+/**
  * - GET /api/transactions/:transactionId
  * - Get transaction by ID
  * - Protected: requires authenticated user
