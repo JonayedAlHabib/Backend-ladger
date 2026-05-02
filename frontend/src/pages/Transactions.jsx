@@ -112,13 +112,25 @@ export default function Transactions() {
                     </div>
                     <div>
                       <p className="text-slate-500 mb-0.5">From Account</p>
-                      <p className="font-mono text-slate-700 break-all">
+                      <p className="text-slate-900 font-medium">
+                        {txn.fromAccount?.user?.name || "Unknown User"}
+                      </p>
+                      <p className="text-slate-500 text-[11px] mt-0.5">
+                        {txn.fromAccount?.user?.email || "—"}
+                      </p>
+                      <p className="font-mono text-slate-400 break-all text-[11px] mt-1">
                         {txn.fromAccount?._id || txn.fromAccount}
                       </p>
                     </div>
                     <div>
                       <p className="text-slate-500 mb-0.5">To Account</p>
-                      <p className="font-mono text-slate-700 break-all">
+                      <p className="text-slate-900 font-medium">
+                        {txn.toAccount?.user?.name || "Unknown User"}
+                      </p>
+                      <p className="text-slate-500 text-[11px] mt-0.5">
+                        {txn.toAccount?.user?.email || "—"}
+                      </p>
+                      <p className="font-mono text-slate-400 break-all text-[11px] mt-1">
                         {txn.toAccount?._id || txn.toAccount}
                       </p>
                     </div>
